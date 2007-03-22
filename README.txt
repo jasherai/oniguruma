@@ -16,6 +16,10 @@ Ruby bindings to the Oniguruma[http://www.geocities.jp/kosako3/oniguruma/] regul
  puts match[0]         <= 'terraforming'
  puts match[:before]   <= 'terr'
  puts match[:after]    <= 'forming'
+ 
+== SYNTAX
+
+Consult the Syntax.txt[link:files/Syntax_txt.html] page.
 
 == REQUIREMENTS:
 

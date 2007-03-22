@@ -1,6 +1,7 @@
 History.txt
 Manifest.txt
 README.txt
+Syntax.txt
 Rakefile
 lib/oniguruma.rb
 ext/oregexp.c
