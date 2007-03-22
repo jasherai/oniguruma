@@ -1,0 +1,7 @@
+History.txt
+Manifest.txt
+README.txt
+Rakefile
+lib/oniguruma.rb
+ext/oregexp.c
+test/test_oniguruma.rb

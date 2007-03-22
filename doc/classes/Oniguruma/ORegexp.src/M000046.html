@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>match (Oniguruma::ORegexp)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre>/*
+ *  call-seq:
+ *     rxp.match(str)   =&gt; matchdata or nil
+ *  
+ *  Returns a &lt;code&gt;MatchData&lt;/code&gt; object describing the match, or
+ *  &lt;code&gt;nil&lt;/code&gt; if there was no match. This is equivalent to retrieving the
+ *  value of the special variable &lt;code&gt;$~&lt;/code&gt; following a normal match.
+ *     
+ *     /(.)(.)(.)/.match(&quot;abc&quot;)[2]   #=&gt; &quot;b&quot;
+ */
+static VALUE oregexp_match( VALUE self, VALUE string ) {
+</pre>
+</body>
+</html>
