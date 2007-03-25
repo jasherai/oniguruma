@@ -3,7 +3,7 @@ require 'hoe'
 
 class Hoe; def extra_deps; @extra_deps.reject { |x| Array(x).first == 'hoe' }; end end
 
-Hoe.new('oniguruma', '0.9.0') do |p|
+Hoe.new('oniguruma', '0.9.1') do |p|
   p.rubyforge_name = 'oniguruma'
   p.author = 'Dizan Vasquez'
   p.email = 'dix_ans@yahoo.com'
