@@ -2,6 +2,7 @@
 * FIX: Buggy resolution of numeric codes for encoding and syntax options (Nikolai Lugovoi)
 * FIX: Buggy implementation of ORegexp#gsub and  ORegexp#gsub methods. Now code is all C (Nikolai Lugovoi)
 * Added documentation for class ORegexp
+* Added regexp syntax documentation.
 
 == 0.9.0 / 2007-03-19
 

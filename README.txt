@@ -43,8 +43,9 @@ sudo gem install -r oniguruma
 
 == CREDITS:
 
-* K.Kosako, for his great library.
-* A lot of the documentation has been copied from the orininal Ruby Regex documentation.
+* N. Lugovoi. ORegexp.sub and ORegexp.gsub code, plus other patches.
+* K. Kosako. For his great library.
+* A lot of the documentation has been copied from the original Ruby Regex documentation.
 
 == LICENSE:
 
