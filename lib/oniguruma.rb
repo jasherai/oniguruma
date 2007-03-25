@@ -254,7 +254,7 @@ module Oniguruma
          return nil unless string
          m = match( string )
          return nil unless m
-         m.begin
+         m.begin(0)
       end
       
       # call-seq:
@@ -289,7 +289,7 @@ module Oniguruma
                matches << m
                positions << position
                tmp_string = m.post_match
-               position += m.end
+               position += m.end(0)
                #if m.end == m.begin
                #   tmp_string = tmp_string[1..-1]
                #   position += 1
@@ -303,51 +303,6 @@ module Oniguruma
          else
             nil
          end
-      end
-      
-      def sub string, replacement = nil
-         matches = match( string )
-         if matches
-            replacement = yield matches[0] unless replacement
-            string.sub( matches[0], replacement )
-         else
-            return string
-         end
-      end
-      
-      def gsub string, replacement = nil
-         result = string
-         matches = match_all( string )
-         string_replace = replacement
-         if matches
-            matches.each do |m, p|
-               replacement = yield( m[0], m ) unless string_replace
-               result = result.sub( m[0], replacement )
-            end
-         end
-         result
-      end
-      
-      def sub! string, replacement = nil
-         matches = match( string )
-         if matches
-            replacement = yield matches[0] unless replacement
-            string.sub!( matches[0], replacement )
-         else
-            return string
-         end
-      end
-      
-      def gsub! string, replacement = nil
-         matches = match_all( string )
-         string_replace = replacement
-         if matches
-            matches.each do |m, p|
-               replacement = yield( m[0], m ) unless string_replace
-               string.sub!( m[0], replacement )
-            end
-         end
-         string
       end
    end
    
@@ -371,11 +326,11 @@ module Oniguruma
       end
       
       def begin index
-         @matches[index].begin + @positions[index]
+         @matches[index].begin(0) + @positions[index]
       end
       
       def end index
-         @matches[index].end + @positions[index]
+         @matches[index].end(0) + @positions[index]
       end
       
       def length
@@ -402,90 +357,15 @@ module Oniguruma
       end
    end
    
-   class MatchData
-      def initialize( string, starts, ends, names )
-         @string = string
-         @starts = starts
-         @ends = ends
-         @matches = []
-         @starts.size.times do |i|
-            @matches << @string[@starts[i]...@ends[i]]
-         end
-         @match_count = @matches.size
-         @start_pos = 0
-         @names = names
-      end
-      
-      def [] ( value1, value2 = nil )
-         unless value2
-            if index = to_index( value1 )
-               @matches[index]
-            else
-               nil
-            end
-         else
-            @matches[value1, value2]
-         end
-      end
-      
-      def to_index name 
-         if name.is_a? Symbol
-            @names[name]
-         else
-            name
-         end
-      end
-      
-      def begin index = 0
-         @starts[to_index( index )]
-      end
-      
-      def end index = 0
-         @ends[to_index( index )]
-      end
-      
-      def captures
-         @matches[1..-1]
-      end
-      
-      def length
-         @match_count
-      end
-      alias size length
-      
-      def offset index = 0
-         [@starts[to_index( index )], @ends[to_index( index )]]
-      end
-      
-      def post_match
-         @string[@ends[0], @string.length]
-      end
-      
-      def pre_match
-         @string[0, @starts[0]]
-      end
-      
-      def select &block
-         @matches.select( &block )
-      end
-      
-      def string
-         @string.freeze
-      end
-      
-      def to_a
-         @matches
-      end
-      
-      def to_s
-         @matches[0]
-      end
-      
-      def values_at *values
-         result = []
-         values.each { |v| result << @matches[v] }
-         result
-      end
-   end
 end
-
+class ::MatchData
+  alias old_aref :[]
+  def [](*idx)
+    if idx[0].is_a?(Symbol) 
+      k = @named_captures && @named_captures[idx[0]]
+      k && old_aref(k)
+    else
+      old_aref(*idx)
+    end
+  end
+end
