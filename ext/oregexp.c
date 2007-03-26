@@ -117,9 +117,6 @@ static int name_callback(
 
    for (i = 0; i < ngroup_num; i++) {
       gn = group_nums[i];
-      ref = onig_name_to_backref_number(reg, name, name_end, region);
-      if (ref != gn )
-        return 1; 
       rb_hash_aset( nameHash, ID2SYM(rb_intern(name)), INT2FIX( gn ) );
   }
   return 0;  
@@ -181,8 +178,7 @@ static VALUE oregexp_make_match_data(ORegexp * oregexp, OnigRegion * region, VAL
     rb_cv_set( kORegexp, "@@last_match", (VALUE)match );
     packet.region = region;
     packet.hash = rb_hash_new();
-    if( onig_foreach_name(oregexp->reg, name_callback, &packet) )
-        rb_raise(rb_eException, "Oniguruma Error: group and backreference names are different");
+    onig_foreach_name(oregexp->reg, name_callback, &packet);
     rb_iv_set((VALUE)match, "@named_captures", packet.hash);
     return (VALUE)match;
 }

@@ -132,6 +132,7 @@ class MatchDataTestCase < Test::Unit::TestCase
    
    def test_begin
       matches = @reg.match( "THX1138." )
+      assert_equal( 1, matches.begin )
       assert_equal( 1, matches.begin(0) )
       assert_equal( 2, matches.begin(2) )
    end
@@ -143,6 +144,7 @@ class MatchDataTestCase < Test::Unit::TestCase
    
    def test_end
       matches = @reg.match( "THX1138." )
+      assert_equal( 7, matches.end )
       assert_equal( 7, matches.end(0) )
       assert_equal( 3, matches.end(2) )
    end
@@ -155,6 +157,7 @@ class MatchDataTestCase < Test::Unit::TestCase
    
    def test_offset
       matches = @reg.match( "THX1138." )
+      assert_equal( [1, 7], matches.offset )
       assert_equal( [1, 7], matches.offset(0) )
       assert_equal( [6, 7], matches.offset(4) )
    end

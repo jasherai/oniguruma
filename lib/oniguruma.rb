@@ -321,13 +321,53 @@ module Oniguruma
    
 end
 class ::MatchData
-  alias old_aref :[]
-  def [](*idx)
-    if idx[0].is_a?(Symbol) 
-      k = @named_captures && @named_captures[idx[0]]
-      k && old_aref(k)
-    else
-      old_aref(*idx)
-    end
-  end
+   def to_index symbol
+      @named_captures && @named_captures[symbol]
+   end
+
+   alias old_aref :[]
+   def [](*idx)
+      if idx[0].is_a?(Symbol) 
+         k = to_index( idx[0] )
+         k && old_aref(k)
+       else
+         old_aref(*idx)
+       end
+   end
+   
+   alias old_begin :begin
+   def begin(*idx)
+      if idx[0].is_a?(Symbol) 
+         k = to_index( idx[0] )
+         k && old_begin(k)
+      elsif idx.empty?
+         old_begin( 0 )
+      else
+         old_begin(*idx)
+      end
+   end
+   
+   alias old_end :end
+   def end(*idx)
+      if idx[0].is_a?(Symbol) 
+         k = to_index( idx[0] )
+         k && old_end(k)
+      elsif idx.empty?
+         old_end( 0 )
+      else
+         old_end(*idx)
+      end
+   end
+   
+   alias old_offset :offset
+   def offset(*idx)
+      if idx[0].is_a?(Symbol) 
+         k = to_index( idx[0] )
+         k && old_offset(k)
+      elsif idx.empty?
+         old_offset( 0 )
+      else
+         old_offset(*idx)
+      end
+   end
 end
