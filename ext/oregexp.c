@@ -224,6 +224,7 @@ matched group), \` (string prior to match), \' (string after match), and \\ (a l
 backslash). */
 
 /* scan the replacement text, looking for substitutions (\n) and \escapes. */
+#define MAX_GROUP_NAME_LEN   64
 static VALUE
 oregexp_get_replacement(pat, src_text, repl_text, region)
      VALUE           pat,
@@ -233,7 +234,7 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
 {
     ORegexp 	*oregexp;
     VALUE 	ret;
-    int32_t  replIdx = 0;
+    int32_t  replIdx = 0, name_pos ;
     int32_t  replacementLength = RSTRING(repl_text)->len;
     UChar    *replacementText = RSTRING(repl_text)->ptr;
     UChar    *replacementEnd  = replacementText + (replacementLength-1);
@@ -243,6 +244,7 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
     OnigEncoding  enc;
     const UChar * matchText;
     long  matchLen;
+    UChar named_group[MAX_GROUP_NAME_LEN] = {0}, *name_end;
     
     matchText = RSTRING(src_text)->ptr;
     matchLen  = RSTRING(src_text)->len;
@@ -311,7 +313,7 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
                                 break;
                         case '+': // last matched group
                                 replIdx += c_len;
-                                for(groupNum = region->num_regs; groupNum > 0; groupNum --) {
+                                for(groupNum = region->num_regs-1; groupNum > 0; groupNum --) {
                                         g_start = region->beg[ groupNum ];
                                         g_end   = region->end[ groupNum ];
                                         if( g_start != -1  ) {
@@ -320,7 +322,37 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
                                         }
                                 }
                                 break;
-                                
+			case '<': // named group references \<name>
+				name_pos = replIdx+c_len;
+				name_end = named_group;
+				while(name_pos < replacementLength) {
+				   c = ONIGENC_MBC_TO_CODE(enc, replacementText+name_pos, replacementEnd);
+				   c_len = ONIGENC_MBC_ENC_LEN(enc, replacementText+name_pos) ; 
+				   name_pos += c_len;
+				   if( c == '>')  break;
+				   if( c < 128 && ONIGENC_IS_CODE_ALNUM(enc, c) && 
+						   name_end - named_group < MAX_GROUP_NAME_LEN ) {
+					*name_end = (UChar)c;
+					name_end ++;
+				   } else {
+				        break;
+				   }
+				}
+				if( c != '>' || name_end == named_group ) {
+				   // place backslash and '<'
+				   rb_str_buf_cat(ret, replacementText+(replIdx-p_len), p_len+c_len);
+				   replIdx += c_len;
+				} else {
+				   // lookup for group and subst for that value
+				   *name_end = '\0';
+				   groupNum = onig_name_to_backref_number( oregexp->reg, named_group, name_end, region);
+				   if( groupNum >= 0 ) {
+				   	rb_str_buf_cat(ret, matchText+region->beg[groupNum], 
+						   region->end[groupNum]-region->beg[groupNum]);
+				   }
+				   replIdx = name_pos;
+				}
+				break;
                         default:
                                 rb_str_buf_cat(ret, replacementText+(replIdx-p_len), p_len+c_len);
                                 replIdx += c_len;
@@ -328,7 +360,7 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
                    }
              } else {
                      /* Finally, append the capture group data to the destination. */
-		     if( groupNum < region->num_regs && region->beg[groupNum] >= 0 && region->end[groupNum]>= region->beg[groupNum] ) {
+		     if( groupNum < region->num_regs && region->beg[groupNum] >= 0 ) {
 	     		rb_str_buf_cat(ret, matchText+region->beg[groupNum], region->end[groupNum]-region->beg[groupNum]);
 		     }
         }             
@@ -400,12 +432,7 @@ oregexp_gsub(self, argc, argv,  bang, once, region)
 	if ( iter ) {
 	    VALUE match_data = oregexp_make_match_data( oregexp, region, string_str );
             rb_backref_set(match_data);
-            if( once ) 
-                block_res = rb_yield( match_data );
-            else {
-                VALUE match_string = rb_str_new( str_ptr+beg, end-beg);
-                block_res = rb_yield_values(2, match_string, match_data );
-            }
+            block_res = rb_yield( match_data );
 	    str_mod_check( string_str, str_ptr, str_len);
             curr_repl = rb_obj_as_string(block_res); 
 	} else {
@@ -456,18 +483,137 @@ static VALUE oregexp_safe_gsub(self, argc, argv,  bang, once)
         gsub_packet call_args = {self, argc, argv, bang, once, region};
         return rb_ensure( oregexp_packed_gsub, (VALUE)&call_args, oregexp_cleanup_region, (VALUE)region);
 }
+
+/**
+ * call-seq:
+ *     rxp.gsub(str, replacement)
+ *     rxp.gsub(str) {|match_data| ... }
+ *     
+ * Returns a copy of _str_ with _all_ occurrences of _rxp_ pattern
+ * replaced with either _replacement_ or the value of the block. 
+ *
+ * If a string is used as the replacement, the sequences \1, \2, 
+ * and so on may be used to interpolate successive groups in the match.
+ *
+ * In the block form, the current MatchData object is passed in as a
+ * parameter. The value returned by the block will be substituted for
+ * the match on each call.
+ *
+ **/
 static VALUE oregexp_m_gsub(int argc, VALUE *argv, VALUE self) {
 	return oregexp_safe_gsub(self, argc, argv, 0, 0);
 }
+
+/**
+ * call-seq:
+ *     rxp.sub(str, replacement)
+ *     rxp.sub(str) {|match_data| ... }
+ *
+ * Returns a copy of _str_ with the _first_ occurrence of _rxp_ pattern
+ * replaced with either _replacement_ or the value of the block. 
+ *
+ * If a string is used as the replacement, the sequences \1, \2, 
+ * and so on may be used to interpolate successive groups in the match.
+ *
+ * In the block form, the current MatchData object is passed in as a
+ * parameter. The value returned by the block will be substituted for
+ * the match on each call.
+ *     
+ **/
 static VALUE oregexp_m_sub(int argc, VALUE *argv, VALUE self) {
 	return oregexp_safe_gsub(self, argc, argv, 0, 1);
 }
 
+/**
+ * call-seq:
+ *     rxp.gsub!(str, replacement)
+ *     rxp.gsub!(str) {|match_data| ... }
+ *     
+ * Performs the substitutions of ORegexp#gsub in place, returning
+ * _str_, or _nil_ if no substitutions were performed.
+ *
+ **/
 static VALUE oregexp_m_gsub_bang(int argc, VALUE *argv, VALUE self) {
 	return oregexp_safe_gsub(self, argc, argv, 1, 0);
 }
+
+/**
+ * call-seq:
+ *     oregexp.sub!(str, replacement)
+ *     oregexp.sub!(str) {|match_data| ... }
+ *
+ * Performs the substitutions of ORegexp#sub in place, returning
+ * _str_, or _nil_ if no substitutions were performed.
+ *
+ **/
 static VALUE oregexp_m_sub_bang(int argc, VALUE *argv, VALUE self) {
 	return oregexp_safe_gsub(self, argc, argv, 1, 1);
+}
+
+static VALUE
+oregexp_scan(VALUE self, VALUE str, OnigRegion * region)
+{
+    long            beg,
+                    end;
+    int             iter = 0;
+    
+    VALUE           matches;
+    ORegexp        *oregexp;
+    
+    if ( rb_block_given_p()) {
+	iter = 1;
+    } 
+    Data_Get_Struct( self, ORegexp, oregexp );
+
+    VALUE string_str = StringValue( str );
+    UChar* str_ptr = RSTRING(string_str)->ptr;
+    int str_len = RSTRING(string_str)->len;
+    beg = onig_search(oregexp->reg, str_ptr, str_ptr + str_len, str_ptr, str_ptr + str_len, region, ONIG_OPTION_NONE);
+    if (beg < 0) {
+	/* no match */
+	return Qnil;
+    }
+    matches = rb_ary_new();
+    do {
+        VALUE match_data = oregexp_make_match_data( oregexp, region, string_str );
+	end = region->end[0];
+	rb_ary_push( matches, match_data );
+	if ( iter ) 
+		rb_yield( match_data );
+	// find next match
+	beg=onig_search(oregexp->reg, str_ptr, str_ptr + str_len, 
+				      str_ptr+end, str_ptr + str_len, 
+				      region, ONIG_OPTION_NONE);
+    } while ( beg >= 0);
+    
+    VALUE rb_cMultiMatchData = rb_const_get(mOniguruma, rb_intern("MultiMatchData")) ;
+    
+    return rb_funcall(rb_cMultiMatchData, rb_intern("new"), 2, string_str, matches) ;
+}
+
+struct scan_packet {
+    VALUE self, str;
+    OnigRegion * region;
+};
+static VALUE oregexp_packed_scan( struct scan_packet * args) {
+    return oregexp_scan(args->self, args->str, args->region);
+}
+/**
+ * call-seq:
+ *     rxp.scan(str)                        # => aMultiMatchData
+ *     rxp.scan(str) {|match_data| ... }    # => aMultiMatchData
+ *
+ * Both forms iterate through _str_, matching the pattern. For each match, 
+ * a MatchData object is generated and passed to the block, and
+ * added to the resulting MultiMatchData object.
+ *
+ * If _str_ does not match pattern, _nil_ is returned.
+ *
+ **/
+static VALUE oregexp_m_scan(VALUE self, VALUE str) {
+    OnigRegion * region = onig_region_new();
+    struct scan_packet call_args = {self, str, region};
+    return rb_ensure( oregexp_packed_scan, (VALUE)&call_args, oregexp_cleanup_region, (VALUE)region);
 }
 
 void Init_oregexp() {
@@ -480,4 +626,5 @@ void Init_oregexp() {
    rb_define_method( cORegexp, "sub",  oregexp_m_sub,  -1 );
    rb_define_method( cORegexp, "gsub!", oregexp_m_gsub_bang, -1 );
    rb_define_method( cORegexp, "sub!",  oregexp_m_sub_bang,  -1 );
+   rb_define_method( cORegexp, "scan",  oregexp_m_scan,  1 );
 }

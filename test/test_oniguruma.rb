@@ -53,7 +53,7 @@ class ORegexpTestCase < Test::Unit::TestCase
       string = 'My favorite fruits are (?#fruit1), (?#fruit2), and (?#fruit3)'
       assert_equal( "My favorite fruits are *, *, and *", reg.gsub( string, '*' ) )
       fruits = { "fruit1" => "apples", "fruit2" => "bananas", "fruit3" => "grapes" }
-      assert_equal( "My favorite fruits are apples, bananas, and grapes", reg.gsub( string ) { |text, match| fruits[match[1]]} )
+      assert_equal( "My favorite fruits are apples, bananas, and grapes", reg.gsub( string ) { |match| fruits[match[1]]} )
    end
    
    def test_eql
@@ -78,6 +78,7 @@ class ORegexpTestCase < Test::Unit::TestCase
    def test_operator_match
       assert_equal( nil, Oniguruma::ORegexp.new( 'SIT' ) =~ "insensitive" )
       assert_equal( 5, Oniguruma::ORegexp.new( 'SIT', :options => Oniguruma::OPTION_IGNORECASE ) =~ "insensitive" )
+      assert_equal( 5, Oniguruma::ORegexp.new( 'SIT', 'i' ) =~ "insensitive" )
    end
    
 #    def test_operator_match_2
@@ -96,6 +97,8 @@ class ORegexpTestCase < Test::Unit::TestCase
    def test_kcode
       reg  = Oniguruma::ORegexp.new( "(3.)(.*)(3.)" )
       assert_equal( Oniguruma::ENCODING_ASCII, reg.kcode )
+      reg  = Oniguruma::ORegexp.new( "(3.)(.*)(3.)", '', 'cp1251' )
+      assert_equal( Oniguruma::ENCODING_CP1251, reg.kcode )
    end
    
    def test_options
@@ -106,6 +109,12 @@ class ORegexpTestCase < Test::Unit::TestCase
       string = '(?<=\n)\\.*ocatarinetabelachitchix'
       assert_equal( string, Oniguruma::ORegexp.new( string ).source )
    end
+
+   def test_named_sub_backrefs
+      re = Oniguruma::ORegexp.new('(?<pre>\w+?)\d+(?<after>\w+)')
+      assert_equal('def123abc', re.sub('abc123def', '\<after>123\<pre>') )
+   end
+
 end
 
 class MatchDataTestCase < Test::Unit::TestCase
@@ -189,9 +198,20 @@ class MatchDataTestCase < Test::Unit::TestCase
    def test_match_all
       reg = Oniguruma::ORegexp.new( 'ca' )
       matches = reg.match_all( 'ocatacachaca' )
+      a = []
+      matches.each { |m| a << m.offset(0) }
+      assert_equal( [ [1,3], [5,7], [10,12] ], a)
       assert_equal( 3, matches.size )
-      assert_equal( 7, matches.position(2) )
+      assert_equal( 10, matches.position(2) )
       assert_equal( "ca", matches.string[matches.begin(1)...matches.end(1)])
+   end
+   
+   def test_scan
+      reg = Oniguruma::ORegexp.new( 'ca' )
+      a = []
+      matches = reg.match_all( 'ocatacachaca' ) { |m| a << m.offset(0) }
+      assert_kind_of(Oniguruma::MultiMatchData, matches)
+      assert_equal( [ [1,3], [5,7], [10,12] ], a)
    end
    
    def test_match_empty_string
@@ -222,13 +242,13 @@ class MatchDataTestCase < Test::Unit::TestCase
    
    def test_utf8_gsub
      reg = Oniguruma::ORegexp.new( '([а-я])([а-я])([а-я]+)', :options => Oniguruma::OPTION_IGNORECASE, :encoding => Oniguruma::ENCODING_UTF8 )
-     new_str = reg.gsub("Text: Ехал Грека Через Реку") {|s,m| m[1]*2+m[2]*2+m[3] }
+     new_str = reg.gsub("Text: Ехал Грека Через Реку") {|m| m[1]*2+m[2]*2+m[3] }
      assert_equal("Text: ЕЕххал ГГррека ЧЧеерез РРееку", new_str)
    end
    
    def test_utf8_gsub2
      reg = Oniguruma::ORegexp.new( '[а-я]', :options => Oniguruma::OPTION_IGNORECASE, :encoding => Oniguruma::ENCODING_UTF8 )
-     new_str = reg.gsub("Text: Ехал Грека Через Реку") {|s,m| s*2 }
+     new_str = reg.gsub("Text: Ехал Грека Через Реку") {|m| m[0]*2 }
      assert_equal("Text: ЕЕххаалл ГГррееккаа ЧЧеерреезз РРееккуу", new_str)
    end
    
@@ -259,19 +279,29 @@ class MatchDataTestCase < Test::Unit::TestCase
     assert_equal("hello".ogsub('[aeiou]', '*')              , "h*ll*")
     assert_equal("hello".ogsub('([aeiou])', '<\1>')         , "h<e>ll<o>")
     i = 0 
-    assert_equal("12345" , Oniguruma::ORegexp.new('.').gsub("hello") {|s,m| i+=1; i.to_s})
-    assert_equal("214365", Oniguruma::ORegexp.new('(.)(.)').gsub("123456") {|s,m| m[2] + m[1] }) 
+    assert_equal("12345" , Oniguruma::ORegexp.new('.').gsub("hello") {|m| i+=1; i.to_s})
+    assert_equal("214365", Oniguruma::ORegexp.new('(.)(.)').gsub("123456") {|m| m[2] + m[1] }) 
     a = "test"
     a.ogsub!('t', a)
     assert_equal("testestest", a)
   end
 
   def test_match_compat
-    t = Oniguruma::ORegexp.new('(.)(.)').gsub("123456") {|s,m| "#$2#$1" }
+    t = Oniguruma::ORegexp.new('(.)(.)').gsub("123456") {|m| "#$2#$1" }
     assert_equal("214365", t ) 
-    t = Oniguruma::ORegexp.new('([aeiou])').gsub("hello") {|s,m| "<#$1>" }
+    t = Oniguruma::ORegexp.new('([aeiou])').gsub("hello") {|m| "<#$1>" }
     assert_equal( "h<e>ll<o>", t)
   end
 
+  def _u16(str)
+    str.unpack("U*").pack("n*") 
+  end
+
+  def test_utf16_gsub
+    r = Oniguruma::ORegexp.new( _u16('[aeiou]'), :encoding => Oniguruma::ENCODING_UTF16_BE)
+    assert_equal( _u16("h*ll*"), r.gsub( _u16("hello"), _u16('*')) )
+    r = Oniguruma::ORegexp.new( _u16('([aeiou])'), :encoding => Oniguruma::ENCODING_UTF16_BE)
+    assert_equal( _u16("h<e>\\ll<o>\\"), r.gsub( _u16("hello"), _u16('<\1>\\')) )
+  end
 
 end

@@ -17,6 +17,20 @@ module Oniguruma
    OPTION_MAXBIT               = OPTION_POSIX_REGION
    OPTION_DEFAULT              = OPTION_NONE
 
+   OPTIONS_SHORTCUTS = {
+    'i' => OPTION_IGNORECASE,
+    'x' => OPTION_EXTEND,
+    'm' => OPTION_MULTILINE,
+    's' => OPTION_SINGLELINE,
+    'l' => OPTION_FIND_LONGEST,
+    'E' => OPTION_FIND_NOT_EMPTY,
+    'S' => OPTION_NEGATE_SINGLELINE,
+    'G' => OPTION_DONT_CAPTURE_GROUP,
+    'g' => OPTION_CAPTURE_GROUP,
+    'B' => OPTION_NOTBOL,
+    'E' => OPTION_NOTEOL,
+   }
+
    SYNTAX_ASIS                 = 0
    SYNTAX_POSIX_BASIC          = 1
    SYNTAX_POSIX_EXTENDED       = 2
@@ -117,8 +131,12 @@ module Oniguruma
       alias old_initialize initialize 
       # :startdoc:
       
+      # call-seq:
+      #     ORegexp.new( pattern, options_hash )
+      #     ORegexp.new( pattern, option_str, encoding_str=nil, syntax_str=nil) 
+      #
       # Constructs a new regular expression from <i>pattern</i>, which is a 
-      # <code>String</code>. The paramter <i>options</i> is a <code>Hash</code> 
+      # <code>String</code>. The second parameter <i></i> may be a <code>Hash</code> 
       # of the form:
       #
       # <code>{ :options => option_value, :encoding => encoding_value, :syntax => syntax_value }</code>
@@ -135,9 +153,27 @@ module Oniguruma
       #
       #     #Accept java syntax on SJIS encoding:
       #     r4 = ORegexp.new('ape', :syntax  => SYNTAX_JAVA, :encoding => ENCODING_SJIS) #=> /ape/ 
+      #    
+      # Second form uses string shortcuts to set options and encoding:
+      #     r = ORegexp.new('cat', 'i', 'utf8', 'java')
       
-      def initialize( pattern, options = {} )
+      def initialize( pattern, *args )
          defaults = { :options => OPTION_DEFAULT, :encoding => ENCODING_ASCII, :syntax => SYNTAX_DEFAULT}
+	 if args[0].is_a?(String)
+           options = {}
+	   option_str, encoding_str, syntax_str = *args
+	   opt = 0
+	   option_str.each_byte {|x| opt |= (OPTIONS_SHORTCUTS[x.chr] || 0) }
+	   options[:options] = opt
+	   if encoding_str && Oniguruma::const_defined?("ENCODING_#{encoding_str.upcase}")
+             options[:encoding] = Oniguruma::const_get("ENCODING_#{encoding_str.upcase}")
+	   end
+	   if syntax_str && Oniguruma::const_defined?("SYNTAX_#{syntax_str.upcase}")
+             options[:syntax] = Oniguruma::const_get("SYNTAX_#{syntax_str.upcase}")
+	   end
+	 else
+           options = args[0] || {}
+	 end
          old_initialize( pattern,  defaults.merge( options ).freeze )
       end
       
@@ -279,42 +315,18 @@ module Oniguruma
          @pattern.freeze
       end
       
-      def match_all string
-         matches = []
-         positions = []
-         position = 0
-         tmp_string = string
-         while tmp_string != ""
-            if m = match( tmp_string )
-               matches << m
-               positions << position
-               tmp_string = m.post_match
-               position += m.end(0)
-               #if m.end == m.begin
-               #   tmp_string = tmp_string[1..-1]
-               #   position += 1
-               #end
-            else
-               break
-            end
-         end
-         if matches.size > 0
-            MultiMatchData.new( string, matches, positions )
-         else
-            nil
-         end
-      end
+      alias match_all scan
+      
    end
    
    class MultiMatchData
-      def initialize( string, matches, positions )
+      def initialize( string, matches )
          @matches = matches
-         @positions = positions
          @string = string
       end
       
       def position index
-         @positions[index]
+         @matches[index].begin(0)
       end
       
       def [] ( value1, value2 = nil )
@@ -326,11 +338,11 @@ module Oniguruma
       end
       
       def begin index
-         @matches[index].begin(0) + @positions[index]
+         @matches[index].begin(0)
       end
       
       def end index
-         @matches[index].end(0) + @positions[index]
+         @matches[index].end(0) 
       end
       
       def length
@@ -350,10 +362,8 @@ module Oniguruma
          @matches
       end
       
-      def each
-         @matches.size.times do |i|
-            yield @matches[i], @positions[i]
-         end
+      def each &block
+         @matches.each &block 
       end
    end
    
