@@ -97,8 +97,8 @@ class ORegexpTestCase < Test::Unit::TestCase
    def test_kcode
       reg  = Oniguruma::ORegexp.new( "(3.)(.*)(3.)" )
       assert_equal( Oniguruma::ENCODING_ASCII, reg.kcode )
-      reg  = Oniguruma::ORegexp.new( "(3.)(.*)(3.)", '', 'cp1251' )
-      assert_equal( Oniguruma::ENCODING_CP1251, reg.kcode )
+      reg  = Oniguruma::ORegexp.new( "(3.)(.*)(3.)", '', 'SJIS' )
+      assert_equal( Oniguruma::ENCODING_SJIS, reg.kcode )
    end
    
    def test_options
@@ -231,6 +231,8 @@ class MatchDataTestCase < Test::Unit::TestCase
       assert_equal( nil, matches[:inexistent])
    end
 
+# casefolding for full Unicode set is not present in versions prior to 5.
+if Oniguruma::VERSION >= '5.0.0'
    def test_utf8_ignore_case
      reg = Oniguruma::ORegexp.new( '([а-я])+', :options => Oniguruma::OPTION_IGNORECASE, :encoding => Oniguruma::ENCODING_UTF8 )
      matches = reg.match("Text: Ехал Грека Через Реку")
@@ -251,7 +253,8 @@ class MatchDataTestCase < Test::Unit::TestCase
      new_str = reg.gsub("Text: Ехал Грека Через Реку") {|m| m[0]*2 }
      assert_equal("Text: ЕЕххаалл ГГррееккаа ЧЧеерреезз РРееккуу", new_str)
    end
-   
+end
+
    def test_sub_compatibility
      $x = "a.gif"
      assert_equal("b.gif", $x.osub('.*\.([^\.]+)$', 'b.\1'))
@@ -296,12 +299,14 @@ class MatchDataTestCase < Test::Unit::TestCase
   def _u16(str)
     str.unpack("U*").pack("n*") 
   end
-
+puts Oniguruma::VERSION 
+if Oniguruma::VERSION >= '4.0.0'
   def test_utf16_gsub
     r = Oniguruma::ORegexp.new( _u16('[aeiou]'), :encoding => Oniguruma::ENCODING_UTF16_BE)
     assert_equal( _u16("h*ll*"), r.gsub( _u16("hello"), _u16('*')) )
     r = Oniguruma::ORegexp.new( _u16('([aeiou])'), :encoding => Oniguruma::ENCODING_UTF16_BE)
     assert_equal( _u16("h<e>\\ll<o>\\"), r.gsub( _u16("hello"), _u16('<\1>\\')) )
   end
+end
 
 end
