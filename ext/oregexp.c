@@ -169,12 +169,12 @@ static VALUE oregexp_make_match_data(ORegexp * oregexp, OnigRegion * region, VAL
 
     match->str = rb_str_new4(string_str);
     match->regs = ALLOC(struct re_registers);
-    match->regs->allocated = count+1;
+    match->regs->allocated = count;
     match->regs->num_regs = count;
-    match->regs->beg = ALLOC_N(int, (count+1));
-    match->regs->end = ALLOC_N(int, (count+1));
+    match->regs->beg = ALLOC_N(int, count);
+    match->regs->end = ALLOC_N(int, count);
 
-    for ( i = 0; i <= count; i++){
+    for ( i = 0; i < count; i++){
         match->regs->beg[i] = region->beg[i];
         match->regs->end[i] = region->end[i];
     }
