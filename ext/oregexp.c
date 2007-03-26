@@ -639,12 +639,12 @@ static VALUE oregexp_packed_scan( struct scan_packet * args) {
 }
 /**
  * call-seq:
- *     rxp.scan(str)                        # => aMultiMatchData
- *     rxp.scan(str) {|match_data| ... }    # => aMultiMatchData
+ *     rxp.scan(str)                        # => [matchdata1, matchdata2,...] or nil
+ *     rxp.scan(str) {|match_data| ... }    # => [matchdata1, matchdata2,...] or nil
  *
  * Both forms iterate through _str_, matching the pattern. For each match, 
  * a MatchData object is generated and passed to the block, and
- * added to the resulting MultiMatchData object.
+ * added to the resulting array of MatchData objects.
  *
  * If _str_ does not match pattern, _nil_ is returned.
  *
