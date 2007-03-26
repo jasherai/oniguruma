@@ -202,15 +202,15 @@ class MatchDataTestCase < Test::Unit::TestCase
       matches.each { |m| a << m.offset(0) }
       assert_equal( [ [1,3], [5,7], [10,12] ], a)
       assert_equal( 3, matches.size )
-      assert_equal( 10, matches.position(2) )
-      assert_equal( "ca", matches.string[matches.begin(1)...matches.end(1)])
+      assert_equal( 10, matches[2].begin( 0 ) )
+      assert_equal( "ca", matches[1].string[matches[1].begin( 0 )...matches[1].end( 0 )])
    end
    
    def test_scan
       reg = Oniguruma::ORegexp.new( 'ca' )
       a = []
       matches = reg.match_all( 'ocatacachaca' ) { |m| a << m.offset(0) }
-      assert_kind_of(Oniguruma::MultiMatchData, matches)
+      #assert_kind_of(Oniguruma::MultiMatchData, matches)
       assert_equal( [ [1,3], [5,7], [10,12] ], a)
    end
    

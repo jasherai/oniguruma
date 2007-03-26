@@ -319,54 +319,6 @@ module Oniguruma
       
    end
    
-   class MultiMatchData
-      def initialize( string, matches )
-         @matches = matches
-         @string = string
-      end
-      
-      def position index
-         @matches[index].begin(0)
-      end
-      
-      def [] ( value1, value2 = nil )
-         unless value2
-            @matches[value1]
-         else
-            @matches[value1, value2]
-         end
-      end
-      
-      def begin index
-         @matches[index].begin(0)
-      end
-      
-      def end index
-         @matches[index].end(0) 
-      end
-      
-      def length
-         @matches.size
-      end
-      alias size length
-      
-      def offset index
-         [self.begin(index), self.end(index) ]
-      end
-      
-      def string
-         @string.freeze
-      end
-      
-      def to_a
-         @matches
-      end
-      
-      def each &block
-         @matches.each &block 
-      end
-   end
-   
 end
 class ::MatchData
   alias old_aref :[]

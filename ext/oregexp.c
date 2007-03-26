@@ -627,9 +627,7 @@ oregexp_scan(VALUE self, VALUE str, OnigRegion * region)
 				      region, ONIG_OPTION_NONE);
     } while ( beg >= 0);
     
-    VALUE rb_cMultiMatchData = rb_const_get(mOniguruma, rb_intern("MultiMatchData")) ;
-    
-    return rb_funcall(rb_cMultiMatchData, rb_intern("new"), 2, string_str, matches) ;
+    return matches;
 }
 
 struct scan_packet {
