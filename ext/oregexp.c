@@ -134,10 +134,6 @@ static VALUE oregexp_initialize( VALUE self, VALUE pattern, VALUE options ) {
    rb_iv_set( self, "@options", options );
    UChar* pat_ptr = RSTRING(pattern_str)->ptr;
    int pat_len = RSTRING(pattern_str)->len;
-   if( pat_len == 0 ) {
-      rb_raise(rb_eArgError, "Empty pattern makes no sense.");
-   }
-
    VALUE rOptions = rb_hash_aref( options, ID2SYM( rb_intern( "options" ) ) );
    VALUE rEncoding = rb_hash_aref( options, ID2SYM( rb_intern( "encoding" ) ) );
    VALUE rSyntax = rb_hash_aref( options, ID2SYM( rb_intern( "syntax" ) ) );
@@ -408,13 +404,15 @@ oregexp_gsub(self, argc, argv,  bang, once, region)
     VALUE           repl;
     long            beg,
                     end,
+                    len,
                     prev_end;
     int             tainted = 0,
 		    iter = 0;
     
     VALUE buf, curr_repl,  block_res;
     ORegexp *oregexp;
-    
+    OnigEncoding enc;
+
     if (argc == 1 && rb_block_given_p()) {
 	iter = 1;
     } else if (argc == 2) {
@@ -441,6 +439,7 @@ oregexp_gsub(self, argc, argv,  bang, once, region)
     }
     end = 0;
     buf = rb_str_buf_new(str_len);
+    enc = onig_get_encoding( oregexp->reg );
     do {
 	prev_end = end;
 	beg = region->beg[0];
@@ -458,6 +457,17 @@ oregexp_gsub(self, argc, argv,  bang, once, region)
 	rb_str_append(buf, curr_repl);
 	if( once ) break;
 	// find next match
+        if( end == beg) { 
+           /*
+            * Always consume at least one character of the input string
+            * in order to prevent infinite loops.
+            */
+           if( str_len <= end )
+               break;
+           len = ONIGENC_MBC_ENC_LEN(enc, str_ptr + end);
+           rb_str_buf_cat( buf, str_ptr+end, len);
+           end += len;
+        }
 	beg=onig_search(oregexp->reg, str_ptr, str_ptr + str_len, 
 				      str_ptr+end, str_ptr + str_len, 
 				      region, ONIG_OPTION_NONE);
@@ -571,11 +581,13 @@ static VALUE
 oregexp_scan(VALUE self, VALUE str, OnigRegion * region)
 {
     long            beg,
+                    len,
                     end;
     int             iter = 0;
     
     VALUE           matches;
     ORegexp        *oregexp;
+    OnigEncoding    enc;
     
     if ( rb_block_given_p()) {
 	iter = 1;
@@ -591,6 +603,7 @@ oregexp_scan(VALUE self, VALUE str, OnigRegion * region)
 	return Qnil;
     }
     matches = rb_ary_new();
+    enc = onig_get_encoding( oregexp -> reg );
     do {
         VALUE match_data = oregexp_make_match_data( oregexp, region, string_str );
 	end = region->end[0];
@@ -598,6 +611,17 @@ oregexp_scan(VALUE self, VALUE str, OnigRegion * region)
 	if ( iter ) 
 		rb_yield( match_data );
 	// find next match
+        if( end == beg) { 
+           /*
+            * Always consume at least one character of the input string
+            * in order to prevent infinite loops.
+            */
+           if( str_len <= end )
+               break;
+           len = ONIGENC_MBC_ENC_LEN(enc, str_ptr + end);
+           end += len;
+        }
+
 	beg=onig_search(oregexp->reg, str_ptr, str_ptr + str_len, 
 				      str_ptr+end, str_ptr + str_len, 
 				      region, ONIG_OPTION_NONE);
