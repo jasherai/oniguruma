@@ -293,24 +293,6 @@ module Oniguruma
          m.begin(0)
       end
       
-      # call-seq:
-      #    rxp === str   => true or false
-      # 
-      # Case Equality---Synonym for <code>Regexp#=~</code> used in case statements.
-      #    
-      #    a = "HELLO"
-      #    case a
-      #    when ORegexp.new('^[a-z]*$'); print "Lower case\n"
-      #    when ORegexp.new('^[A-Z]*$'); print "Upper case\n"
-      #    else;                         print "Mixed case\n"
-      #    end
-      #    
-      # <em>produces:</em>
-      #    
-      #    Upper case      
-      
-      alias === =~
-      
       def source
          @pattern.freeze
       end

@@ -214,7 +214,7 @@ static VALUE oregexp_match( VALUE self, VALUE string ) {
       onig_region_free(region, 1 );
       char s[ONIG_MAX_ERROR_MESSAGE_LEN];
       onig_error_code_to_str(s, r);
-      rb_raise(rb_eException, "Oniguruma Error: %s", s);
+      rb_raise(rb_eArgError, "Oniguruma Error: %s", s);
    }
 
 }
@@ -651,6 +651,41 @@ static VALUE oregexp_m_scan(VALUE self, VALUE str) {
     return rb_ensure( oregexp_packed_scan, (VALUE)&call_args, oregexp_cleanup_region, (VALUE)region);
 }
 
+/**
+ * call-seq:
+ *     rxp === str   => true or false
+ *    
+ * Case Equality---Synonym for <code>ORegexp#=~</code> used in case statements.
+ *    
+ *    a = "HELLO"
+ *    case a
+ *    when ORegexp.new('^[a-z]*$'); print "Lower case\n"
+ *    when ORegexp.new('^[A-Z]*$'); print "Upper case\n"
+ *    else;                         print "Mixed case\n"
+ *    end
+ *    
+ * <em>produces:</em>
+ *    
+ *    Upper case      
+ *
+ **/
+ 
+static VALUE oregexp_m_eqq(VALUE self, VALUE str) {
+    VALUE match;
+
+    if (TYPE(str) != T_STRING) {
+	str = rb_check_string_type(str);
+	if (NIL_P(str)) {
+	    return Qfalse;
+	}
+    }
+    StringValue(str);
+    match = oregexp_match(self, str);
+    if (Qnil == match) {
+	return Qfalse;
+    }
+    return Qtrue;
+}
 void Init_oregexp() {
    mOniguruma = rb_define_module("Oniguruma");
    VALUE cORegexp = rb_define_class_under(mOniguruma, "ORegexp", rb_cObject);
@@ -662,5 +697,6 @@ void Init_oregexp() {
    rb_define_method( cORegexp, "gsub!", oregexp_m_gsub_bang, -1 );
    rb_define_method( cORegexp, "sub!",  oregexp_m_sub_bang,  -1 );
    rb_define_method( cORegexp, "scan",  oregexp_m_scan,  1 );
+   rb_define_method( cORegexp, "===",  oregexp_m_eqq,  1 );
    rb_define_const( mOniguruma, "VERSION", rb_str_new2(onig_version()) );
 }

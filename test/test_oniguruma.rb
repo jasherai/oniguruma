@@ -74,7 +74,19 @@ class ORegexpTestCase < Test::Unit::TestCase
       
       assert_equal( "Upper case\n", result )
    end
-   
+
+   def test_case_eql_compat
+      # === method should not raise when used in case statements
+      a = Time.now
+      result = ""
+      case a
+        when /./ ; result =  "rgx"
+        when Oniguruma::ORegexp.new('.'); result =  "ore"
+        else;                         result =  "else"
+      end
+      assert_equal( "else", result )
+   end
+  
    def test_operator_match
       assert_equal( nil, Oniguruma::ORegexp.new( 'SIT' ) =~ "insensitive" )
       assert_equal( 5, Oniguruma::ORegexp.new( 'SIT', :options => Oniguruma::OPTION_IGNORECASE ) =~ "insensitive" )
