@@ -111,8 +111,7 @@ static int name_callback(
    regex_t* reg, 
    struct callback_packet* arg
 ) {
-   int i, gn, ref;
-   OnigRegion *region = arg->region;
+   int i, gn;
    VALUE nameHash = arg->hash;
 
    for (i = 0; i < ngroup_num; i++) {
@@ -157,6 +156,7 @@ struct RMatch {
     struct re_registers *regs;
 };
 #define RMATCH(obj)  (R_CAST(RMatch)(obj))
+void rb_match_busy _((VALUE));
 
 static VALUE oregexp_make_match_data(ORegexp * oregexp, OnigRegion * region, VALUE string_str) {
     VALUE rb_cMatch = rb_const_get(rb_cObject, rb_intern("MatchData")) ;
@@ -179,9 +179,11 @@ static VALUE oregexp_make_match_data(ORegexp * oregexp, OnigRegion * region, VAL
     }
     rb_cv_set( kORegexp, "@@last_match", (VALUE)match );
     packet.region = region;
-    packet.hash = rb_hash_new();
-    onig_foreach_name(oregexp->reg, name_callback, &packet);
-    rb_iv_set((VALUE)match, "@named_captures", packet.hash);
+    if( onig_number_of_names( oregexp->reg ) > 0 ) {
+        packet.hash = rb_hash_new();
+        onig_foreach_name(oregexp->reg, name_callback, &packet);
+        rb_iv_set((VALUE)match, "@named_captures", packet.hash);
+    }
     return (VALUE)match;
 }
  

@@ -268,6 +268,7 @@ class MatchDataTestCase < Test::Unit::TestCase
       reg = Oniguruma::ORegexp.new( '(?<begin>\()(?<body>.*)(?<end>\))', :options => Oniguruma::OPTION_MULTILINE )
       matches = reg.match( "blah (content) blah" )
       assert_not_nil( matches )
+      assert_equal $~, matches
       assert_equal( '(', matches[:begin] )
       assert_equal( 'content', matches[:body] )
       assert_equal( ')', matches[:end] )
@@ -277,6 +278,18 @@ class MatchDataTestCase < Test::Unit::TestCase
    def test_multibyte_named_backrefs 
      r = Oniguruma::ORegexp.new('(?<имя>test).+(\k<имя>)', :encoding => Oniguruma::ENCODING_UTF8)
      assert_equal "should TEST", r.sub("should test this damned test") {|m| m[:"имя"].upcase } 
+   end
+
+   def test_no_named_backrefs
+     r = Oniguruma::ORegexp.new('(.+).+(.+)')
+     r.match("text")
+     assert_not_nil $~
+     assert_equal 0, $~.instance_variables.size
+     r = Oniguruma::ORegexp.new('(?<a>.+).+(?<b>.+)')
+     r.match("text")
+     assert_not_nil $~
+     assert_equal 1, $~.instance_variables.size
+
    end
 
 # casefolding for full Unicode set is not present in versions prior to 5.
