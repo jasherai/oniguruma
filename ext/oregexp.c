@@ -145,16 +145,18 @@ static VALUE oregexp_initialize( VALUE self, VALUE pattern, VALUE options ) {
    if (r != ONIG_NORMAL) {
       char s[ONIG_MAX_ERROR_MESSAGE_LEN];
       onig_error_code_to_str(s, r, &einfo);
-      rb_raise(rb_eException, "Oniguruma Error: %s", s);
+      rb_raise(rb_eArgError, "Oniguruma Error: %s", s);
    }
    return self;
 }
 
+/* can't include re.h, since it conflicts with oniguruma typedefs */
 struct RMatch {
     struct RBasic basic;
     VALUE str;
     struct re_registers *regs;
 };
+#define RMATCH(obj)  (R_CAST(RMatch)(obj))
 
 static VALUE oregexp_make_match_data(ORegexp * oregexp, OnigRegion * region, VALUE string_str) {
     VALUE rb_cMatch = rb_const_get(rb_cObject, rb_intern("MatchData")) ;
@@ -203,9 +205,12 @@ static VALUE oregexp_match( VALUE self, VALUE string ) {
 
    OnigRegion *region = onig_region_new();
    int r = onig_search(oregexp->reg, str_ptr, str_ptr + str_len, str_ptr, str_ptr + str_len, region, ONIG_OPTION_NONE);
+   rb_backref_set(Qnil);
    if (r >= 0) {
       VALUE matchData = oregexp_make_match_data( oregexp, region, string_str);
       onig_region_free(region, 1 );
+      rb_backref_set(matchData);
+      rb_match_busy(matchData);
       return matchData;
    } else if (r == ONIG_MISMATCH) {
       onig_region_free(region, 1 );
@@ -444,6 +449,7 @@ oregexp_gsub(self, argc, argv,  bang, once, region)
 	if ( iter ) {
 	    VALUE match_data = oregexp_make_match_data( oregexp, region, string_str );
             rb_backref_set(match_data);
+            rb_match_busy(match_data);
             block_res = rb_yield( match_data );
 	    str_mod_check( string_str, str_ptr, str_len);
             curr_repl = rb_obj_as_string(block_res); 
@@ -686,12 +692,31 @@ static VALUE oregexp_m_eqq(VALUE self, VALUE str) {
     }
     return Qtrue;
 }
+/*
+* call-seq:
+*    rxp =~ string  => int or nil
+*
+* Matches <code>rxp</code> against <code>string</code>, returning the offset of the 
+* start of the match or <code>nil</code> if the match failed. Sets $~ to the corresponding 
+* <code>MatchData</code> or <code>nil</code>.
+*
+*    ORegexp.new( 'SIT' ) =~ "insensitive"                                 #=>    nil
+*    ORegexp.new( 'SIT', :options => OPTION_IGNORECASE ) =~ "insensitive"  #=>    5
+**/ 
+static VALUE oregexp_match_op(VALUE self, VALUE str) {
+   VALUE ret = oregexp_match(self, str);
+   if(ret == Qnil)
+      return Qnil;
+   return INT2FIX(RMATCH(ret)->regs->beg[0]);
+}
+
 void Init_oregexp() {
    mOniguruma = rb_define_module("Oniguruma");
    VALUE cORegexp = rb_define_class_under(mOniguruma, "ORegexp", rb_cObject);
    rb_define_alloc_func(cORegexp, oregexp_allocate);
    rb_define_method( cORegexp, "initialize", oregexp_initialize, 2 );
    rb_define_method( cORegexp, "match", oregexp_match, 1 );
+   rb_define_method( cORegexp, "=~", oregexp_match_op, 1 );
    rb_define_method( cORegexp, "gsub", oregexp_m_gsub, -1 );
    rb_define_method( cORegexp, "sub",  oregexp_m_sub,  -1 );
    rb_define_method( cORegexp, "gsub!", oregexp_m_gsub_bang, -1 );

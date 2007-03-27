@@ -27,7 +27,7 @@ class ORegexpTestCase < Test::Unit::TestCase
    end
 
    def test_bad_initialization
-      assert_raises(Exception) do
+      assert_raises(ArgumentError) do
          reg  = Oniguruma::ORegexp.new( "(3.)(.*)(3.))" )
       end
    end
@@ -126,6 +126,30 @@ class ORegexpTestCase < Test::Unit::TestCase
       re = Oniguruma::ORegexp.new('(?<pre>\w+?)\d+(?<after>\w+)')
       assert_equal('def123abc', re.sub('abc123def', '\<after>123\<pre>') )
    end
+
+   def test_named_sub_backrefs_dupes
+      re = Oniguruma::ORegexp.new('(?<pre>\w+?)\d+(?<pre>\w+)')
+      assert_equal('123def', re.sub('abc123def', '123\<pre>') )
+   end
+
+   def test_backref_set_for_match
+     re = Oniguruma::ORegexp.new('Date:(\d{4})/(\d{2})/(\d{2})')
+     assert re.match( "Date:2007/03/25" )
+     assert_not_nil $~
+     assert_equal "2007", $1
+     assert_equal "03", $2
+     assert_equal "25", $3
+   end
+
+   def test_backref_set_for_match_op
+     re = Oniguruma::ORegexp.new('Date:(\d{4})/(\d{2})/(\d{2})')
+     assert re =~ "Date:2007/03/25"
+     assert_not_nil $~
+     assert_equal "2007", $1
+     assert_equal "03", $2
+     assert_equal "25", $3
+   end
+
 
 end
 

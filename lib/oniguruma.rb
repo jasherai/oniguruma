@@ -276,23 +276,6 @@ module Oniguruma
          "/" + ORegexp.escape( @pattern ) + "/" + opt_str
       end
       
-      # call-seq:
-      #    rxp =~ string  => int or nil
-      #
-      # Matches <code>rxp</code> against <code>string</code>, returning the offset of the 
-      # start of the match or <code>nil</code> if the match failed. Sets $~ to the corresponding 
-      # <code>MatchData</code> or <code>nil</code>.
-      #
-      #    ORegexp.new( 'SIT' ) =~ "insensitive"                                 #=>    nil
-      #    ORegexp.new( 'SIT', :options => OPTION_IGNORECASE ) =~ "insensitive"  #=>    5
-      
-      def =~ string
-         return nil unless string
-         m = match( string )
-         return nil unless m
-         m.begin(0)
-      end
-      
       def source
          @pattern.freeze
       end
