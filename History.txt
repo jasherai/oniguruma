@@ -1,3 +1,34 @@
+== 1.0.0 / 2007-03-27
+* Added documentation for MatchData.
+* Added ogsub, ogsub!, sub and sub! to ::String.
+* Removed ::String definitions from tests.
+* Now the minimal recommended version of oniglib is 5.5 or higher.
+* Removed ugly #if statements from c code.
+* Do not create @named_captures hash if there are no named groups for regexp -- somewhat improve speed for repetive calls
+* Fixed usage of named backreferences in gsub with non-ascii names
+* Move ORegexp#=~ to C code, make it work just like Regexp#=~, i.e. set $~. Throw ArgumentError instead of Exception if pattern does not compile
+* Fix implementation of ORegexp#===, so it now does not raise errors in case statement anymore
+  (resembles plain Ruby Regexp#=== behaviour)
+* Modified begin, end and offset methods in MatchData to handle named groups and default to group 0.
+* Exception is not longer thrown when in oregexp_make_match_data.
+* Removed references to MultiMatchData from documentation
+* Removed class MultiMatchData
+* Fix off by one error in region->num_regs usage
+* Fix dumb bug with zero-width matches that made infinite loops. now consume at least one char in gsub and scan
+* ORegexp API changes:
+  * Pass only MatchData to sub/gsub with blocks
+      oregexp.sub( str ) {|match_data| ... }
+      oregexp.gsub( str ) {|match_data| ... }
+  * Add ORegexp#scan instead of match_all
+      oregexp.scan(str) {|match_data| ... } # => MultiMatchData
+  * Friendly way to set options 
+      ORegexp.new( pattern, options_str, encoding, syntax)
+      ORegexp.new('\w+', 'imsx', 'koi8r', 'perl')
+  *  Named backreferences in substitions 
+      ORegexp.new('(?<pre>\w+)\d+(?<after>\w+)').sub('abc123def', '\<after>123\<pre>')  #=> 'def123abc'
+* couple of bugfixes with region's num_regs
+* some  docs for substitution methods added
+
 == 0.9.1 / 2007-03-25
 * FIX: Buggy resolution of numeric codes for encoding and syntax options (Nikolai Lugovoi)
 * FIX: Buggy implementation of ORegexp#gsub and  ORegexp#gsub methods. Now code is all C (Nikolai Lugovoi)

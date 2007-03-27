@@ -47,12 +47,10 @@ static OnigEncodingType * int2encoding( VALUE v_index ) {
       case 15: return ONIG_ENCODING_ISO_8859_15;
       case 16: return ONIG_ENCODING_ISO_8859_16;
       case 17: return ONIG_ENCODING_UTF8;
-#if ONIGURUMA_VERSION_MAJOR != 2      
       case 18: return ONIG_ENCODING_UTF16_BE;
       case 19: return ONIG_ENCODING_UTF16_LE;
       case 20: return ONIG_ENCODING_UTF32_BE;
       case 21: return ONIG_ENCODING_UTF32_LE;
-#endif      
       case 22: return ONIG_ENCODING_EUC_JP;
       case 23: return ONIG_ENCODING_EUC_TW;
       case 24: return ONIG_ENCODING_EUC_KR;
@@ -60,13 +58,9 @@ static OnigEncodingType * int2encoding( VALUE v_index ) {
       case 26: return ONIG_ENCODING_SJIS;
       /*case 27: return ONIG_ENCODING_KOI8;*/
       case 28: return ONIG_ENCODING_KOI8_R;
-#if ONIGURUMA_VERSION_MAJOR == 5
       case 29: return ONIG_ENCODING_CP1251;
-#endif      
       case 30: return ONIG_ENCODING_BIG5;
-#if ONIGURUMA_VERSION_MAJOR != 2      
       case 31: return ONIG_ENCODING_GB18030;
-#endif      
       case 32: return ONIG_ENCODING_UNDEF;
    }
    }
@@ -78,9 +72,7 @@ static OnigSyntaxType * int2syntax( VALUE v_index ) {
    if( ! NIL_P(v_index) ) {
      index = FIX2INT(v_index);
    switch( index ) {
-#if ONIGURUMA_VERSION_MAJOR != 2      
       case 0: return ONIG_SYNTAX_ASIS;
-#endif      
       case 1: return ONIG_SYNTAX_POSIX_BASIC;
       case 2: return ONIG_SYNTAX_POSIX_EXTENDED;
       case 3: return ONIG_SYNTAX_EMACS;
@@ -88,9 +80,7 @@ static OnigSyntaxType * int2syntax( VALUE v_index ) {
       case 5: return ONIG_SYNTAX_GNU_REGEX;
       case 6: return ONIG_SYNTAX_JAVA;
       case 7: return ONIG_SYNTAX_PERL;
-#if ONIGURUMA_VERSION_MAJOR != 2      
       case 8: return ONIG_SYNTAX_PERL_NG;
-#endif      
       case 9: return ONIG_SYNTAX_RUBY;
       case 10: return ONIG_SYNTAX_DEFAULT;
    }
@@ -233,9 +223,6 @@ matched group), \` (string prior to match), \' (string after match), and \\ (a l
 backslash). */
 
 /* scan the replacement text, looking for substitutions (\n) and \escapes. */
-#if ONIGURUMA_VERSION_MAJOR == 2
-#define ONIGENC_MBC_ENC_LEN(e, p)   enc_len(e, *(p))
-#endif
 static VALUE
 oregexp_get_replacement(pat, src_text, repl_text, region)
      VALUE           pat,

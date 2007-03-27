@@ -276,6 +276,12 @@ module Oniguruma
          "/" + ORegexp.escape( @pattern ) + "/" + opt_str
       end
       
+      # call-seq:
+      #    rxp.source   => str
+      # 
+      # Returns the original string of the pattern.
+      # 
+      #    ORegex.new( 'ab+c', 'ix' ).source   #=> "ab+c"
       def source
          @pattern.freeze
       end
@@ -285,12 +291,71 @@ module Oniguruma
    end
    
 end
+
+class ::String
+   # Calls <code>Oniguruma::ORegexp#gsub</code> on this string.
+   def ogsub(*args)
+      Oniguruma::ORegexp.new(args.shift).gsub(self, *args)
+   end
+   
+   # Calls <code>Oniguruma::ORegexp#gsub!</code> on this string.
+   def ogsub!(*args)
+      Oniguruma::ORegexp.new(args.shift).gsub!(self, *args)
+   end
+   
+   # Calls <code>Oniguruma::ORegexp#sub</code> on this string.
+   def osub(re, *args)
+      Oniguruma::ORegexp.new( re ).sub(self, *args)
+   end
+   
+   # Calls <code>Oniguruma::ORegexp#sub!</code> on this string.
+   def osub!(re, *args)
+      Oniguruma::ORegexp.new( re ).sub(self, *args)
+   end
+end
+
 class ::MatchData
+   # call-seq:
+   #    to_index[symbol]      => int or nil
+   # 
+   # Returns the group index for the corresponding named group, or 
+   # <code>nil</code> if the group does not exist.
+   #    
+   #    m = ORegexp.new( '(?<begin>^.*?)(?<middle>\d)(?<end>.*)' ).match("THX1138")
+   #    m.to_index[:begin]    #=> 1
+   #    m.to_index[:unknown]  #=> nil
    def to_index symbol
       @named_captures && @named_captures[symbol]
    end
 
    alias old_aref :[]
+   
+   # call-seq:
+   #    mtch[i]               => obj
+   #    mtch[start, length]   => array
+   #    mtch[range]           => array
+   #    mtch[symbol]          => obj
+   # 
+   # <code>MatchData</code> acts as an array, and may be
+   # accessed using the normal array indexing techniques.  <i>mtch</i>[0] is
+   # equivalent to the special variable <code>$&</code>, and returns the entire
+   # matched string.  <i>mtch</i>[1], <i>mtch</i>[2], and so on return the values
+   # of the matched backreferences (portions of the pattern between parentheses).
+   #    
+   #    m = ORegexp.new( '(.)(.)(\d+)(\d)' ).match("THX1138.")
+   #    m[0]       #=> "HX1138"
+   #    m[1, 2]    #=> ["H", "X"]
+   #    m[1..3]    #=> ["H", "X", "113"]
+   #    m[-3, 2]   #=> ["X", "113"]
+   #
+   # If a symbol is used as index, the corresponding named group is returned,
+   # or <code>nil</code> if such a group does not exist.
+   #
+   #    m = ORegexp.new( '(?<begin>^.*?)(?<middle>\d)(?<end>.*)' ).match("THX1138")
+   #    m[:begin]  #=> "THX"
+   #    m[:moddle]  #=> "1"
+   #    m[:end]  #=> "138"
+   
    def [](*idx)
       if idx[0].is_a?(Symbol) 
          k = to_index( idx[0] )
@@ -301,6 +366,32 @@ class ::MatchData
    end
    
    alias old_begin :begin
+   
+   # call-seq:
+   #    mtch.begin(n)        => integer
+   #    mtch.begin           => integer
+   #    mtch.begin(symbol)   => integer
+   # 
+   # Returns the offset of the start of the <em>n</em>th element of the match
+   # array in the string.
+   #    
+   #    m = ORegexp.new( '(.)(.)(\d+)(\d)' ).match("THX1138.")
+   #    m.begin(0)   #=> 1
+   #    m.begin(2)   #=> 2
+   #
+   # If no arguments are given, the index of the
+   # first matching character is returned.
+   #
+   #    m = ORegexp.new( '(.)(.)(\d+)(\d)' ).match("THX1138.")
+   #    m.begin      #=> 1
+   #
+   # If the argument is a symbol, then the beginning of the 
+   # corresponding named group is returned, or <code>nil</code>
+   # if the group does not exist.
+   #
+   #    m = ORegexp.new( '(?<begin>^.*?)(?<middle>\d)(?<end>.*)' ).match("THX1138")
+   #    m.begin(:middle) #=> 3
+   
    def begin(*idx)
       if idx[0].is_a?(Symbol) 
          k = to_index( idx[0] )
@@ -313,6 +404,30 @@ class ::MatchData
    end
    
    alias old_end :end
+   
+   # call-seq:
+   #    mtch.end(n)   => integer
+   # 
+   # Returns the offset of the character immediately following the end of the
+   # <em>n</em>th element of the match array in the string.
+   #    
+   #    m = ORegexp.new( '(.)(.)(\d+)(\d)' ).match("THX1138.")
+   #    m.end(0)   #=> 7
+   #    m.end(2)   #=> 3
+   #
+   # If no arguments are given, the index of the
+   # last matching character is returned.
+   #
+   #    m = ORegexp.new( '(.)(.)(\d+)(\d)' ).match("THX1138.")
+   #    m.last      #=> 7
+   #
+   # If the argument is a symbol, then the beginning of the 
+   # corresponding named group is returned, or <code>nil</code>
+   # if the group does not exist.
+   #
+   #    m = ORegexp.new( '(?<begin>^.*?)(?<middle>\d)(?<end>.*)' ).match("THX1138")
+   #    m.end(:middle) #=> 4
+   
    def end(*idx)
       if idx[0].is_a?(Symbol) 
          k = to_index( idx[0] )
@@ -325,6 +440,32 @@ class ::MatchData
    end
    
    alias old_offset :offset
+   
+   # call-seq:
+   #    mtch.offset(n)      => array
+   #    mtch.offset         => array
+   #    mtch.offset(symbol) => array
+   # 
+   # Returns a two-element array containing the beginning and ending offsets of
+   # the <em>n</em>th match.
+   #    
+   #    m = ORegexp.new( '(.)(.)(\d+)(\d)' ).match("THX1138.")
+   #    m.offset(0)   #=> [1, 7]
+   #    m.offset(4)   #=> [6, 7]   
+   #
+   # If no arguments are given, the offsets of the entire
+   # sequence are returned.
+   #
+   #    m = ORegexp.new( '(.)(.)(\d+)(\d)' ).match("THX1138.")
+   #    m.offset      #=> [1, 7]
+   #
+   # If the argument is a symbol, then the offsets of the 
+   # corresponding named group are returned, or <code>nil</code>
+   # if the group does not exist.
+   #
+   #    m = ORegexp.new( '(?<begin>^.*?)(?<middle>\d)(?<end>.*)' ).match("THX1138")
+   #    m.end(:middle) #=> [3, 4]
+   
    def offset(*idx)
       if idx[0].is_a?(Symbol) 
          k = to_index( idx[0] )

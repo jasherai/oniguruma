@@ -8,6 +8,7 @@ Ruby bindings to the Oniguruma[http://www.geocities.jp/kosako3/oniguruma/] regul
 * Same interface than standard Regexp class (easy transition!). 
 * Support for named groups, look-ahead, look-behind, and other 
   cool features!
+* Support for other regexp syntaxes (Perl, Python, Java, etc.)
 
 == SYNOPSIS:
 
@@ -23,7 +24,7 @@ Consult the Syntax.txt[link:files/Syntax_txt.html] page.
 
 == REQUIREMENTS:
 
-* Oniguruma[http://www.geocities.jp/kosako3/oniguruma/] library v. 2.0 or greater
+* Oniguruma[http://www.geocities.jp/kosako3/oniguruma/] library v. 5.5 or higher
 
 == INSTALL:
 
@@ -43,7 +44,7 @@ sudo gem install -r oniguruma
 
 == CREDITS:
 
-* N. Lugovoi. ORegexp.sub and ORegexp.gsub code, plus other patches.
+* N. Lugovoi. ORegexp.sub and ORegexp.gsub code and lots of other stuff.
 * K. Kosako. For his great library.
 * A lot of the documentation has been copied from the original Ruby Regex documentation.
 

@@ -326,18 +326,6 @@ end
      assert_equal("<a.gif>", $x.osub('.*\.([^\.]+)$', '<\&>'))
      assert_equal("a.a.", $x.osub('(gif)', '\`') )
    end
-   
-  class ::String
-    def ogsub(*args)
-      Oniguruma::ORegexp.new(args.shift).gsub(self, *args)
-    end
-    def ogsub!(*args)
-      Oniguruma::ORegexp.new(args.shift).gsub!(self, *args)
-    end
-    def osub(re, *args)
-      Oniguruma::ORegexp.new( re ).sub(self, *args)
-    end
-  end
  
   def test_gsub_compat
     assert_equal("hello".ogsub('[aeiou]', '*')              , "h*ll*")
