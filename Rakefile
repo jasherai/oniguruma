@@ -12,7 +12,7 @@ Hoe.new('oniguruma', '1.0.0') do |p|
   p.url = 'http://oniguruma.rubyforge.org'
   p.spec_extras[:extensions] = ["ext/extconf.rb"]
   p.rdoc_pattern = /^(lib|bin|ext)|txt$/
-  p.changes = p.paragraphs_of('History.txt', 0..1).join("\n\n")
+  p.changes = p.paragraphs_of('History.txt', 0).join("\n\n")
 end
 
 
