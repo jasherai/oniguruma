@@ -231,7 +231,6 @@ matched group), \` (string prior to match), \' (string after match), and \\ (a l
 backslash). */
 
 /* scan the replacement text, looking for substitutions (\n) and \escapes. */
-#define MAX_GROUP_NAME_LEN   64
 #if ONIGURUMA_VERSION_MAJOR == 2
 #define ONIGENC_MBC_ENC_LEN(e, p)   enc_len(e, *(p))
 #endif
@@ -244,7 +243,7 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
 {
     ORegexp 	*oregexp;
     VALUE 	ret;
-    int32_t  replIdx = 0, name_pos ;
+    int32_t  replIdx = 0, name_pos, name_start, name_end ;
     int32_t  replacementLength = RSTRING(repl_text)->len;
     UChar    *replacementText = RSTRING(repl_text)->ptr;
     UChar    *replacementEnd  = replacementText + (replacementLength-1);
@@ -254,7 +253,6 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
     OnigEncoding  enc;
     const UChar * matchText;
     long  matchLen;
-    UChar named_group[MAX_GROUP_NAME_LEN] = {0}, *name_end;
     
     matchText = RSTRING(src_text)->ptr;
     matchLen  = RSTRING(src_text)->len;
@@ -338,28 +336,26 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
                                 break;
 			case '<': // named group references \<name>
 				name_pos = replIdx+c_len;
-				name_end = named_group;
+                                name_end = name_start = replIdx+c_len;
 				while(name_pos < replacementLength) {
 				   c = ONIGENC_MBC_TO_CODE(enc, replacementText+name_pos, replacementEnd);
 				   c_len = ONIGENC_MBC_ENC_LEN(enc, replacementText+name_pos) ; 
 				   name_pos += c_len;
 				   if( c == '>')  break;
-				   if( c < 128 && ONIGENC_IS_CODE_ALNUM(enc, c) && 
-						   name_end - named_group < MAX_GROUP_NAME_LEN ) {
-					*name_end = (UChar)c;
-					name_end ++;
+				   if( ONIGENC_IS_CODE_WORD(enc, c) ) {
+					name_end += c_len;
 				   } else {
 				        break;
 				   }
 				}
-				if( c != '>' || name_end == named_group ) {
+				if( c != '>' || name_end == name_start ) {
 				   // place backslash and '<'
 				   rb_str_buf_cat(ret, replacementText+(replIdx-p_len), p_len+c_len);
 				   replIdx += c_len;
 				} else {
 				   // lookup for group and subst for that value
-				   *name_end = '\0';
-				   groupNum = onig_name_to_backref_number( oregexp->reg, named_group, name_end, region);
+				   groupNum = onig_name_to_backref_number( oregexp->reg, 
+                                        replacementText+name_start, replacementText+name_end, region);
 				   if( groupNum >= 0 ) {
 				   	rb_str_buf_cat(ret, matchText+region->beg[groupNum], 
 						   region->end[groupNum]-region->beg[groupNum]);

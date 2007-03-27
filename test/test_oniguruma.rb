@@ -124,7 +124,7 @@ class ORegexpTestCase < Test::Unit::TestCase
 
    def test_named_sub_backrefs
       re = Oniguruma::ORegexp.new('(?<pre>\w+?)\d+(?<after>\w+)')
-      assert_equal('def123abc', re.sub('abc123def', '\<after>123\<pre>') )
+      assert_equal(' def123abc ', re.sub('abc123def', ' \<after>123\<pre> ') )
    end
 
    def test_named_sub_backrefs_dupes
@@ -150,6 +150,10 @@ class ORegexpTestCase < Test::Unit::TestCase
      assert_equal "25", $3
    end
 
+   def test_multibyte_named_backrefs 
+     r = Oniguruma::ORegexp.new('(?<группа>test).+(\k<группа>)', :encoding => Oniguruma::ENCODING_UTF8)
+     assert_equal "should !test!", r.sub("should test this damned test", '!\<группа>!') 
+   end
 
 end
 
@@ -268,6 +272,11 @@ class MatchDataTestCase < Test::Unit::TestCase
       assert_equal( 'content', matches[:body] )
       assert_equal( ')', matches[:end] )
       assert_equal( nil, matches[:inexistent])
+   end
+
+   def test_multibyte_named_backrefs 
+     r = Oniguruma::ORegexp.new('(?<имя>test).+(\k<имя>)', :encoding => Oniguruma::ENCODING_UTF8)
+     assert_equal "should TEST", r.sub("should test this damned test") {|m| m[:"имя"].upcase } 
    end
 
 # casefolding for full Unicode set is not present in versions prior to 5.
