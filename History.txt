@@ -1,3 +1,10 @@
+== 1.0.1 / 2007-03-28
+* Minimal recommended version of oniglib changed to be compatible with Ruby 1.9, now is 4.6 or higher.
+* Restore check for onig version to build with 4.6
+* In getting replacement do not create temp string object, but directly add to resulting buffer (performance impr.)
+* Included gem support for windows.
+* Modified Rakefile to support win32 gems.
+
 == 1.0.0 / 2007-03-27
 * Added documentation for MatchData.
 * Added ogsub, ogsub!, sub and sub! to ::String.
