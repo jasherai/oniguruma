@@ -24,7 +24,7 @@ Consult the Syntax.txt[link:files/Syntax_txt.html] page.
 
 == REQUIREMENTS:
 
-* Oniguruma[http://www.geocities.jp/kosako3/oniguruma/] library v. 5.5 or higher
+* Oniguruma[http://www.geocities.jp/kosako3/oniguruma/] library v. 4.x or higher
 
 == INSTALL:
 
