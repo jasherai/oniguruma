@@ -58,7 +58,9 @@ static OnigEncodingType * int2encoding( VALUE v_index ) {
       case 26: return ONIG_ENCODING_SJIS;
       /*case 27: return ONIG_ENCODING_KOI8;*/
       case 28: return ONIG_ENCODING_KOI8_R;
+#if ONIGURUMA_VERSION_MAJOR == 5      
       case 29: return ONIG_ENCODING_CP1251;
+#endif      
       case 30: return ONIG_ENCODING_BIG5;
       case 31: return ONIG_ENCODING_GB18030;
       case 32: return ONIG_ENCODING_UNDEF;
@@ -224,14 +226,14 @@ backslash). */
 
 /* scan the replacement text, looking for substitutions (\n) and \escapes. */
 static VALUE
-oregexp_get_replacement(pat, src_text, repl_text, region)
+oregexp_append_replacement(pat, src_text, repl_text, region, ret)
      VALUE           pat,
      		     src_text,
                      repl_text;
      OnigRegion * region;
+     VALUE           ret;
 {
     ORegexp 	*oregexp;
-    VALUE 	ret;
     int32_t  replIdx = 0, name_pos, name_start, name_end ;
     int32_t  replacementLength = RSTRING(repl_text)->len;
     UChar    *replacementText = RSTRING(repl_text)->ptr;
@@ -247,8 +249,6 @@ oregexp_get_replacement(pat, src_text, repl_text, region)
     matchLen  = RSTRING(src_text)->len;
     Data_Get_Struct( pat, ORegexp, oregexp );
     enc = onig_get_encoding( oregexp->reg );
-
-    ret = rb_str_buf_new(RSTRING(repl_text)->len);
 
     while (replIdx < replacementLength) {
         OnigCodePoint c = ONIGENC_MBC_TO_CODE(enc, replacementText+replIdx, replacementEnd);
@@ -438,10 +438,10 @@ oregexp_gsub(self, argc, argv,  bang, once, region)
             block_res = rb_yield( match_data );
 	    str_mod_check( string_str, str_ptr, str_len);
             curr_repl = rb_obj_as_string(block_res); 
+            rb_str_append(buf, curr_repl);
 	} else {
-	    curr_repl = oregexp_get_replacement(self, string_str, repl, region);
+	    oregexp_append_replacement(self, string_str, repl, region, buf);
 	}
-	rb_str_append(buf, curr_repl);
 	if( once ) break;
 	// find next match
         if( end == beg) { 
