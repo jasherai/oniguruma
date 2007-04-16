@@ -2,7 +2,7 @@
 #include <oniguruma.h>
 /*
    TODO:
-      - Add named backreferences.
+      - Complete oregexp_match with range parameter.
 */
 
 typedef struct _oregexp {
@@ -181,24 +181,53 @@ static VALUE oregexp_make_match_data(ORegexp * oregexp, OnigRegion * region, VAL
  
 /*
  *  call-seq:
- *     rxp.match(str)   => matchdata or nil
+ *     rxp.match(str)               => matchdata or nil
+ *     rxp.match(str, begin, end)   => matchdata or nil
  *  
  *  Returns a <code>MatchData</code> object describing the match, or
  *  <code>nil</code> if there was no match. This is equivalent to retrieving the
  *  value of the special variable <code>$~</code> following a normal match.
  *     
- *     /(.)(.)(.)/.match("abc")[2]   #=> "b"
+ *     ORegexp.new('(.)(.)(.)').match("abc")[2]   #=> "b"
+ * 
+ *  The second form allows to perform the match in a region
+ *  defined by <code>begin</code> and <code>end</code> while
+ *  still taking into account look-behinds and look-forwards.
+ *     
+ *     ORegexp.new('1*2*').match('11221122').offset       => [4,8]
+ *     ORegexp.new('(?<=2)1*2*').match('11221122').offset => [4,8]
+ *  
+ *  Compare with:
+ *
+ *     ORegexp.new('(?<=2)1*2*').match('11221122'[4..-1]) => nil
  */
-static VALUE oregexp_match( VALUE self, VALUE string ) {
+static VALUE oregexp_match( int argc, VALUE * argv, VALUE self ) {
    ORegexp *oregexp;
    Data_Get_Struct( self, ORegexp, oregexp );
-
-   VALUE string_str = StringValue( string );
+   
+   
+   if ( argc == 0 || argc > 2) {
+      rb_raise(rb_eArgError, "wrong number of arguments (%d for 2)", argc);
+      exit;
+   }
+   
+   VALUE string_str = StringValue( argv[0] );
    UChar* str_ptr = RSTRING(string_str)->ptr;
    int str_len = RSTRING(string_str)->len;
+   
+   int begin = 0;
+   int end = str_len;
+   
+   if (argc > 1 ) {
+      begin = NUM2INT( argv[1] );
+   }
+//    if (argc > 2) {
+//       end = NUM2INT( argv[2] );
+//    }
+
 
    OnigRegion *region = onig_region_new();
-   int r = onig_search(oregexp->reg, str_ptr, str_ptr + str_len, str_ptr, str_ptr + str_len, region, ONIG_OPTION_NONE);
+   int r = onig_search(oregexp->reg, str_ptr, str_ptr + str_len, str_ptr + begin, str_ptr + end, region, ONIG_OPTION_NONE);
    rb_backref_set(Qnil);
    if (r >= 0) {
       VALUE matchData = oregexp_make_match_data( oregexp, region, string_str);
@@ -642,6 +671,7 @@ static VALUE oregexp_m_scan(VALUE self, VALUE str) {
     return rb_ensure( oregexp_packed_scan, (VALUE)&call_args, oregexp_cleanup_region, (VALUE)region);
 }
 
+
 /**
  * call-seq:
  *     rxp === str   => true or false
@@ -671,7 +701,8 @@ static VALUE oregexp_m_eqq(VALUE self, VALUE str) {
 	}
     }
     StringValue(str);
-    match = oregexp_match(self, str);
+    VALUE args[] = {str};
+    match = oregexp_match(1, args, self);
     if (Qnil == match) {
 	return Qfalse;
     }
@@ -689,7 +720,8 @@ static VALUE oregexp_m_eqq(VALUE self, VALUE str) {
 *    ORegexp.new( 'SIT', :options => OPTION_IGNORECASE ) =~ "insensitive"  #=>    5
 **/ 
 static VALUE oregexp_match_op(VALUE self, VALUE str) {
-   VALUE ret = oregexp_match(self, str);
+   VALUE args[] = {str};
+   VALUE ret = oregexp_match(1, args, self);
    if(ret == Qnil)
       return Qnil;
    return INT2FIX(RMATCH(ret)->regs->beg[0]);
@@ -700,7 +732,7 @@ void Init_oregexp() {
    VALUE cORegexp = rb_define_class_under(mOniguruma, "ORegexp", rb_cObject);
    rb_define_alloc_func(cORegexp, oregexp_allocate);
    rb_define_method( cORegexp, "initialize", oregexp_initialize, 2 );
-   rb_define_method( cORegexp, "match", oregexp_match, 1 );
+   rb_define_method( cORegexp, "match", oregexp_match, -1 );
    rb_define_method( cORegexp, "=~", oregexp_match_op, 1 );
    rb_define_method( cORegexp, "gsub", oregexp_m_gsub, -1 );
    rb_define_method( cORegexp, "sub",  oregexp_m_sub,  -1 );

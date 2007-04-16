@@ -256,7 +256,7 @@ module Oniguruma
             opt_str += "x" if (@options[:options] & OPTION_EXTEND) == 0
          end
          opt_str += ")"
-         opt_str + ORegexp.escape( @pattern )
+         opt_str + @pattern
       end
       
       
@@ -273,7 +273,7 @@ module Oniguruma
          opt_str += "i" if (@options[:options] & OPTION_IGNORECASE) > 0
          opt_str += "m" if (@options[:options] & OPTION_MULTILINE) > 0
          opt_str += "x" if (@options[:options] & OPTION_EXTEND) > 0
-         "/" + ORegexp.escape( @pattern ) + "/" + opt_str
+         "/" + @pattern + "/" + opt_str
       end
       
       # call-seq:
