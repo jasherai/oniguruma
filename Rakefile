@@ -4,7 +4,7 @@ require 'hoe'
 class Hoe 
    # Dirty hack to eliminate Hoe from gem dependencies
    def extra_deps 
-      @extra_deps.reject { |x| Array(x).first == 'hoe' }
+      @extra_deps.delete_if{ |x| x.first == 'hoe' }
    end
    
    # Dirty hack to package only the required files per platform

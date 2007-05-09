@@ -1,6 +1,7 @@
-== 1.0.2 /
+== 1.1.0 /
 * Fixed string escaping in ORegexp#to_str and ORegexp#inspect.
 * Added begin parameter to ORegexp#match.
+
 == 1.0.1 / 2007-03-28
 * Minimal recommended version of oniglib changed to be compatible with Ruby 1.9, now is 4.6 or higher.
 * Restore check for onig version to build with 4.6
