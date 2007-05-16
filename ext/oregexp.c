@@ -179,7 +179,7 @@ static VALUE oregexp_make_match_data(ORegexp * oregexp, OnigRegion * region, VAL
     return (VALUE)match;
 }
  
-/*
+/**
  *  call-seq:
  *     rxp.match(str)               => matchdata or nil
  *     rxp.match(str, begin, end)   => matchdata or nil
@@ -588,7 +588,7 @@ static VALUE oregexp_m_gsub_bang(int argc, VALUE *argv, VALUE self) {
  * Performs the substitutions of ORegexp#sub in place, returning
  * _str_, or _nil_ if no substitutions were performed.
  *
- **/
+ */
 static VALUE oregexp_m_sub_bang(int argc, VALUE *argv, VALUE self) {
 	return oregexp_safe_gsub(self, argc, argv, 1, 1);
 }
@@ -653,6 +653,7 @@ struct scan_packet {
 static VALUE oregexp_packed_scan( struct scan_packet * args) {
     return oregexp_scan(args->self, args->str, args->region);
 }
+
 /**
  * call-seq:
  *     rxp.scan(str)                        # => [matchdata1, matchdata2,...] or nil
@@ -670,7 +671,6 @@ static VALUE oregexp_m_scan(VALUE self, VALUE str) {
     struct scan_packet call_args = {self, str, region};
     return rb_ensure( oregexp_packed_scan, (VALUE)&call_args, oregexp_cleanup_region, (VALUE)region);
 }
-
 
 /**
  * call-seq:
@@ -708,7 +708,8 @@ static VALUE oregexp_m_eqq(VALUE self, VALUE str) {
     }
     return Qtrue;
 }
-/*
+
+/**
 * call-seq:
 *    rxp =~ string  => int or nil
 *
@@ -718,7 +719,8 @@ static VALUE oregexp_m_eqq(VALUE self, VALUE str) {
 *
 *    ORegexp.new( 'SIT' ) =~ "insensitive"                                 #=>    nil
 *    ORegexp.new( 'SIT', :options => OPTION_IGNORECASE ) =~ "insensitive"  #=>    5
-**/ 
+*/ 
+
 static VALUE oregexp_match_op(VALUE self, VALUE str) {
    VALUE args[] = {str};
    VALUE ret = oregexp_match(1, args, self);
