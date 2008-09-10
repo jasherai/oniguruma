@@ -47,10 +47,6 @@ static OnigEncodingType * int2encoding( VALUE v_index ) {
       case 15: return ONIG_ENCODING_ISO_8859_15;
       case 16: return ONIG_ENCODING_ISO_8859_16;
       case 17: return ONIG_ENCODING_UTF8;
-      case 18: return ONIG_ENCODING_UTF16_BE;
-      case 19: return ONIG_ENCODING_UTF16_LE;
-      case 20: return ONIG_ENCODING_UTF32_BE;
-      case 21: return ONIG_ENCODING_UTF32_LE;
       case 22: return ONIG_ENCODING_EUC_JP;
       case 23: return ONIG_ENCODING_EUC_TW;
       case 24: return ONIG_ENCODING_EUC_KR;
@@ -62,7 +58,6 @@ static OnigEncodingType * int2encoding( VALUE v_index ) {
       case 29: return ONIG_ENCODING_CP1251;
 #endif      
       case 30: return ONIG_ENCODING_BIG5;
-      case 31: return ONIG_ENCODING_GB18030;
       case 32: return ONIG_ENCODING_UNDEF;
    }
    }
@@ -74,7 +69,6 @@ static OnigSyntaxType * int2syntax( VALUE v_index ) {
    if( ! NIL_P(v_index) ) {
      index = FIX2INT(v_index);
    switch( index ) {
-      case 0: return ONIG_SYNTAX_ASIS;
       case 1: return ONIG_SYNTAX_POSIX_BASIC;
       case 2: return ONIG_SYNTAX_POSIX_EXTENDED;
       case 3: return ONIG_SYNTAX_EMACS;
@@ -82,7 +76,6 @@ static OnigSyntaxType * int2syntax( VALUE v_index ) {
       case 5: return ONIG_SYNTAX_GNU_REGEX;
       case 6: return ONIG_SYNTAX_JAVA;
       case 7: return ONIG_SYNTAX_PERL;
-      case 8: return ONIG_SYNTAX_PERL_NG;
       case 9: return ONIG_SYNTAX_RUBY;
       case 10: return ONIG_SYNTAX_DEFAULT;
    }
