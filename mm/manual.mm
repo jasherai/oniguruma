@@ -52,7 +52,7 @@ additional functionality:
 
 *   Named groups.
     -----------hl ruby,,false-----
-    reg = ORegex.new( '(?<before>.*)(a)(?<after>.*)' )
+    reg = ORegexp.new( '(?<before>.*)(a)(?<after>.*)' )
     match = reg.match( 'terraforming' )
     puts match[0]                      #=> 'terraforming'
     puts match[:before]                #=> 'terr'

@@ -281,7 +281,7 @@ module Oniguruma
       # 
       # Returns the original string of the pattern.
       # 
-      #    ORegex.new( 'ab+c', 'ix' ).source   #=> "ab+c"
+      #    ORegexp.new( 'ab+c', 'ix' ).source   #=> "ab+c"
       def source
          @pattern.freeze
       end

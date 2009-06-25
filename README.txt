@@ -12,7 +12,7 @@ Ruby bindings to the Oniguruma[http://www.geocities.jp/kosako3/oniguruma/] regul
 
 == SYNOPSIS:
 
- reg = Oniguruma::ORegex.new( '(?<before>.*)(a)(?<after>.*)' )
+ reg = Oniguruma::ORegexp.new( '(?<before>.*)(a)(?<after>.*)' )
  match = reg.match( 'terraforming' )
  puts match[0]         <= 'terraforming'
  puts match[:before]   <= 'terr'
