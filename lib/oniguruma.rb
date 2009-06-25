@@ -157,24 +157,28 @@ module Oniguruma
       # Second form uses string shortcuts to set options and encoding:
       #     r = ORegexp.new('cat', 'i', 'utf8', 'java')
       
-      def initialize( pattern, *args )
-         defaults = { :options => OPTION_DEFAULT, :encoding => ENCODING_ASCII, :syntax => SYNTAX_DEFAULT}
-	 if args[0].is_a?(String)
-           options = {}
-	   option_str, encoding_str, syntax_str = *args
-	   opt = 0
-	   option_str.each_byte {|x| opt |= (OPTIONS_SHORTCUTS[x.chr] || 0) }
-	   options[:options] = opt
-	   if encoding_str && Oniguruma::const_defined?("ENCODING_#{encoding_str.upcase}")
-             options[:encoding] = Oniguruma::const_get("ENCODING_#{encoding_str.upcase}")
-	   end
-	   if syntax_str && Oniguruma::const_defined?("SYNTAX_#{syntax_str.upcase}")
-             options[:syntax] = Oniguruma::const_get("SYNTAX_#{syntax_str.upcase}")
-	   end
-	 else
-           options = args[0] || {}
-	 end
-         old_initialize( pattern,  defaults.merge( options ).freeze )
+      def initialize(pattern, *args)
+        defaults = {
+          :options  => OPTION_DEFAULT,
+          :encoding => ENCODING_ASCII,
+          :syntax   => SYNTAX_DEFAULT
+        }
+        if args[0].is_a?(String)
+          options = {}
+          option_str, encoding_str, syntax_str = *args
+          opt = 0
+          option_str.each_byte { |x| opt |= (OPTIONS_SHORTCUTS[x.chr] || 0) }
+          options[:options] = opt
+          if encoding_str && Oniguruma::const_defined?("ENCODING_#{encoding_str.upcase}")
+            options[:encoding] = Oniguruma::const_get("ENCODING_#{encoding_str.upcase}")
+          end
+          if syntax_str && Oniguruma::const_defined?("SYNTAX_#{syntax_str.upcase}")
+            options[:syntax] = Oniguruma::const_get("SYNTAX_#{syntax_str.upcase}")
+          end
+        else
+          options = args[0] || {}
+        end
+        old_initialize(pattern, defaults.merge(options).freeze)
       end
       
       # call-seq:
