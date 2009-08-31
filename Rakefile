@@ -10,22 +10,11 @@ begin
       def extra_deps 
          @extra_deps.delete_if{ |x| x.first == 'hoe' }
       end
-      
-      # Dirty hack to package only the required files per platform
-      def spec= s 
-         if ENV['PLATFORM'] =~ /win32/
-            s.files = s.files.reject! {|f| f =~ /extconf\.rb/}
-         else
-            s.files = s.files.reject! {|f| f =~ /win\//}
-         end
-         @spec = s
-      end
    end
    
-   version = /^== *(\d+\.\d+\.\d+)/.match( File.read( 'History.txt' ) )[1]
-   
-   h = Hoe.new('oniguruma', version) do |p|
+   h = Hoe.spec('oniguruma') do |p|
       p.rubyforge_name = 'oniguruma'
+      p.version = /^== *(\d+\.\d+\.\d+)/.match( File.read( 'History.txt' ) )[1]
       p.author = ['Dizan Vasquez', 'Nikolai Lugovoi']
       p.email = 'dichodaemon@gmail.com'
       p.summary = 'Bindings for the oniguruma regular expression library'
@@ -38,9 +27,16 @@ begin
       else
          p.spec_extras[:extensions] = ["ext/extconf.rb"]
       end
-      p.rdoc_pattern = /^(lib|bin|ext)|txt$/
       p.changes = p.paragraphs_of('History.txt', 0).join("\n\n")
       p.clean_globs = ["manual/*"]
+   end
+   
+   h.spec.extra_rdoc_files = h.spec.files.grep('/txt/$')
+   
+   if ENV['PLATFORM'] =~ /win32/
+     h.spec.files -=  Dir["ext/extconf.rb"]
+   else
+     h.spec.files -= Dir["win/oregexp.so"]
    end
 
    desc 'Create MaMa documentation'

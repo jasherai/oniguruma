@@ -1,3 +1,6 @@
+== 1.1.2 /
+* Fixed build issues with Hoe 2.3.3
+
 == 1.1.1 /
 * Fixed oregexp.c issue with UTF16/32 etc. patch found at http://howflow.com/tricks/ruby_how_to_install_the_gem_oniguruma
 
